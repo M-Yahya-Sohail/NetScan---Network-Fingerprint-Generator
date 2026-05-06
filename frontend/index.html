@@ -236,7 +236,20 @@
       </div>
 
     </section>
-
+    <div id="errorModal" class="error-modal">
+      <div class="error-content">
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="#bf5fff" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3 class="error-title">Analysis Failed</h3>
+        <p id="errorMessage" class="error-text">Domain exist nahi karta!</p>
+        <button class="run-btn run-btn--purple" onclick="closeError()">
+          OK, Try Again
+        </button>
+      </div>
+    </div>
   </div><!-- /app -->
 
   <script src="script.js"></script>

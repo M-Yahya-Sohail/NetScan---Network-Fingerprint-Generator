@@ -16,7 +16,7 @@ def capture_with_request(url, duration=10):
     """Capture karo aur saath mein website ko request bhi bhejo"""
     target_ip = get_ip(url)
     if not target_ip:
-        target_ip = "Unknown" # Agar resolve na ho toh fail na ho
+        raise ValueError("The specified domain does not exist or DNS resolution failed.!")
     
     packets_result = []
     
@@ -27,11 +27,13 @@ def capture_with_request(url, duration=10):
         my_iface = 'Wi-Fi'
     
     def do_capture():
-        # IP ka filter hata diya. BPF filter se sirf Web traffic capture hoga!
+        # IP ka filter hata diya. BPF filter se sirf Web traffic capture hoga! Background traafic nahi hoga
+        bpf_filter = "(tcp port 80 or tcp port 443)"
+        
         captured = scapy.sniff(
             timeout=duration, 
             iface=my_iface,
-            filter="tcp port 80 or tcp port 443"
+            filter=bpf_filter
         )
         packets_result.extend(captured)
     
