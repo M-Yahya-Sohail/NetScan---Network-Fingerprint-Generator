@@ -38,6 +38,10 @@ def analyze():
         fingerprint = generate_fingerprint(url, features)
 
         return jsonify(fingerprint)
+    
+    except ValueError as e:
+        # Yeh wala block specifically domain missing ke liye chalega
+        return jsonify({"error": str(e)}), 400
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -8,7 +8,7 @@ def generate_fingerprint(url, features):
     proto = features.get("protocol_distribution", {})
     top_protocol = max(proto, key=proto.get) if proto else "Unknown"
 
-    label, confidence = classify_behavior(features)
+    label, confidence = classify_behavior(url, features)
 
     return {
         "site_url": url,
