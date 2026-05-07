@@ -17,7 +17,14 @@ cd NetScan
 
 # Install Python dependencies
 pip install -r requirements.txt
-3. Run the DashboardBashcd backend
+3. Run the DashboardBash
+
+cd backend
 python app.py
-Open your browser and go to: http://127.0.0.1:5000🧪 Automated TestingTo ensure the integrity of the classification engine, run the automated stress-test suite:Bashpython backend/test_netscan.py
-This script validates the system against 25+ real-world domains to ensure a high accuracy rate.👤 DeveloperMuhammad Yahya Sohail Software Engineering Student at PUCIT
+
+Open your browser and go to: http://127.0.0.1:5000
+
+🧪 Automated TestingTo ensure the integrity of the classification engine, run the automated stress-test suite:Bashpython backend/test_netscan.py
+This script validates the system against 25+ real-world domains to ensure a high accuracy rate.
+
+👤 DeveloperMuhammad Yahya Sohail Software Engineering Student at PUCIT
