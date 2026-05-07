@@ -91,30 +91,36 @@ async function analyzeSingle() {
     const data = await response.json();
 
     if (!response.ok) {
-      // Agar backend ne 400 bhej diya (Domain not found)
-      alert("⚠️ Error: " + data.error); // Yeh alert generate karega
-      hideLoading();
+      showError("⚠️ " + (data.error || "Domain does not exist!"));
+      showLoading(false);
       return;
     }
 
-    if (data.error) {
-      showError(data.error);
-    } else {
-      displayFingerprint(data);
-      renderSingleCharts(data);
-      document.getElementById("resultsSection").classList.add("visible");
-    }
+    displayFingerprint(data);
+    renderSingleCharts(data);
+    document.getElementById("resultsSection").classList.add("visible");
   } catch (e) {
-    showError("Backend connect nahi hua. Make sure app.py is running.");
+    showError("Backend Error");
   }
   showLoading(false);
 }
 
 // --- COMPARE WEBSITES ---
+// --- COMPARE WEBSITES ---
 async function compareURLs() {
-  const url1 = "https://" + document.getElementById("comp1").value.trim();
-  const url2 = "https://" + document.getElementById("comp2").value.trim();
+  const v1 = document.getElementById("comp1").value.trim();
+  const v2 = document.getElementById("comp2").value.trim();
 
+  // Basic Validation
+  if (!v1 || !v2) {
+    alert("Please enter both URLs to compare!");
+    return;
+  }
+
+  const url1 = "https://" + v1;
+  const url2 = "https://" + v2;
+
+  // 20 second window for comparison
   showLoading(true, 20);
   document.getElementById("protocolChart2").style.display = "block";
 
@@ -124,19 +130,30 @@ async function compareURLs() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url1, url2 }),
     });
+
     const data = await response.json();
 
-    if (data.error) {
-      showError(data.error);
-    } else {
-      displayComparison(data);
-      renderComparisonCharts(data);
-      document.getElementById("resultsSection").classList.add("visible");
+    // --- CASE 1: Domain Error (400) ---
+    if (!response.ok) {
+      // Direct Alert, No showError fuzool calls
+      showError("⚠️ " + (data.error || "One of the domains does not exist!"));
+      showLoading(false);
+      return; 
     }
+
+    // --- CASE 2: Success ---
+    displayComparison(data);
+    renderComparisonCharts(data);
+    document.getElementById("resultsSection").classList.add("visible");
+
   } catch (e) {
-    showError("Backend Error!");
+    // --- CASE 3: Backend connection error ---
+    console.error("Compare Error:", e);
+    showError("❌ Error: Cannot connect to backend server!");
+  } finally {
+    // End mein loading band
+    showLoading(false);
   }
-  showLoading(false);
 }
 
 // --- DISPLAY LOGIC ---

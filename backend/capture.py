@@ -59,6 +59,26 @@ import threading
 import requests
 import socket
 import time
+from urllib.parse import urlparse
+
+def check_domain_exists(url):
+    """
+    Check karta hai ke domain exist karta hai ya nahi.
+    Return 1 if exists, 0 if not.
+    """
+    try:
+        # 1. Extract domain from URL (e.g., https://google.com -> google.com)
+        domain = urlparse(url).netloc
+        
+        # If URL don't have schema the urlprase becomes empty
+        if not domain:
+            domain = url.split('/')[0]
+
+        # 2. Check DNS resolution
+        socket.gethostbyname(domain)
+        return 1
+    except (socket.gaierror, Exception):
+        return 0
 
 def get_ip(url):
     try:
@@ -68,7 +88,14 @@ def get_ip(url):
         return None
 
 def capture_with_request(url, duration=10):
+    
+    if check_domain_exists(url) == 0:
+        raise ValueError("The specified domain does not exist or DNS resolution failed!")
+    
     target_ip = get_ip(url)
+    if not target_ip:
+        raise ValueError("The specified domain does not exist or DNS resolution failed!")
+
     if not target_ip:
         target_ip = "Unknown" 
     

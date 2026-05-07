@@ -56,36 +56,34 @@ def compare():
     if not url1 or not url2:
         return jsonify({"error": "Dono URLs lazmi hain"}), 400
 
-    # --- Site 1 Capture ---
-    # Pehle site 1 ko capture karte hain
-    p1, _ = capture_with_request(url1, duration=10)
-    site1_res = generate_fingerprint(url1, extract_features(p1))
+    try:
+        # --- Site 1 Capture ---
+        p1, _ = capture_with_request(url1, duration=10)
+        site1_res = generate_fingerprint(url1, extract_features(p1))
 
-    # Chota sa break taake network socket release ho jaye
-    time.sleep(1)
+        # Chota sa break
+        time.sleep(1)
 
-    # --- Site 2 Capture ---
-    # Phir site 2 ko capture karte hain
-    p2, _ = capture_with_request(url2, duration=10)
-    site2_res = generate_fingerprint(url2, extract_features(p2))
+        # --- Site 2 Capture ---
+        p2, _ = capture_with_request(url2, duration=10)
+        site2_res = generate_fingerprint(url2, extract_features(p2))
 
-    # --- Difference Calculation ---
-    # Results ko compare karke diff object banate hain
-    diff = {
-        "more_bytes": url1
-        if site1_res["total_bytes"] > site2_res["total_bytes"]
-        else url2,
-        "more_unique_ips": url1
-        if len(site1_res["unique_ips"]) > len(site2_res["unique_ips"])
-        else url2,
-        "larger_packets": url1
-        if site1_res["mean_packet_size"] > site2_res["mean_packet_size"]
-        else url2,
-    }
+        # --- Difference Calculation ---
+        diff = {
+            "more_bytes": url1 if site1_res["total_bytes"] > site2_res["total_bytes"] else url2,
+            "more_unique_ips": url1 if len(site1_res["unique_ips"]) > len(site2_res["unique_ips"]) else url2,
+            "larger_packets": url1 if site1_res["mean_packet_size"] > site2_res["mean_packet_size"] else url2,
+        }
 
-    # Final JSON response
-    return jsonify({"site1": site1_res, "site2": site2_res, "diff": diff})
+        return jsonify({"site1": site1_res, "site2": site2_res, "diff": diff})
 
+    except ValueError as e:
+        # Agar koi bhi domain ghalat hai toh tameez se error bhejega
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:
+        # Agar koi aur masla hai
+        return jsonify({"error": f"Comparison failed: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
