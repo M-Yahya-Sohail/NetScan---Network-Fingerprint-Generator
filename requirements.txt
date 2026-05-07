@@ -1,5 +1,17 @@
-# requirements.txt
+# Web Framework & Server
 flask
 flask-cors
+werkzeug
+
+# Network Sniffing & Analysis
 scapy
 requests
+urllib3
+
+# Automation & Headless Browser
+selenium
+webdriver-manager
+
+# Utilities
+cryptography
+packaging
