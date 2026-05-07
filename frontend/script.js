@@ -2,6 +2,7 @@ let charts = {};
 
 // --- HELPER: VALIDATE URL ---
 function validateURL(url) {
+  // Regex ensures http:// or https:// and a valid domain pattern
   return /^https?:\/\/.+\..+/.test(url);
 }
 
@@ -16,8 +17,6 @@ function formatBytes(b) {
 // --- UI CONTROL ---
 function showLoading(show, duration = 10) {
   const loader = document.getElementById("loadingSection");
-  const progressFill = document.getElementById("progressFill");
-  const progressPct = document.getElementById("progressPct");
   const caption = document.getElementById("loadingCaption");
 
   if (show) {
@@ -26,9 +25,8 @@ function showLoading(show, duration = 10) {
     document.getElementById("homeView").style.display = "none";
     document.getElementById("inputSection").style.display = "none";
 
-    // Progress bar aur text reset karein
     caption.innerText = `Capturing Live Packets (${duration}s window)`;
-    animateProgressBar(duration * 1000); // ms mein convert kiya
+    animateProgressBar(duration * 1000);
   } else {
     loader.classList.remove("visible");
   }
@@ -41,7 +39,7 @@ function animateProgressBar(ms) {
 
   function update(now) {
     const elapsed = now - start;
-    const progress = Math.min(elapsed / ms, 1); // 0 se 1 tak
+    const progress = Math.min(elapsed / ms, 1);
 
     fill.style.width = progress * 100 + "%";
     pctText.innerText = Math.round(progress * 100) + "%";
@@ -54,16 +52,12 @@ function animateProgressBar(ms) {
 }
 
 function showError(msg) {
-  // Loading animation rok do
   showLoading(false);
-
-  // Custom modal mein error text dalo aur usay show karo
   document.getElementById("errorMessage").innerText = msg;
   document.getElementById("errorModal").classList.add("visible");
 }
 
 function closeError() {
-  // Modal ko hide karo aur page refresh kar do taake UI reset ho jaye
   document.getElementById("errorModal").classList.remove("visible");
   resetApp();
 }
@@ -73,26 +67,26 @@ async function analyzeSingle() {
   const urlInput = document.getElementById("url1");
   const url = urlInput.value.trim();
 
-  if (!validateURL("https://" + url)) {
-    alert("Please enter a valid domain (e.g., google.com)");
+  // STRICTOR VALIDATION: Must have protocol
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    showError("⚠️ Please provide a full URL starting with http:// or https://");
     return;
   }
 
   showLoading(true);
-  // 2nd doughnut hide kar rahe hain single mode mein
   document.getElementById("protocolChart2").style.display = "none";
 
   try {
     const response = await fetch("http://localhost:5000/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: "https://" + url }),
+      body: JSON.stringify({ url: url }),
     });
+
     const data = await response.json();
 
     if (!response.ok) {
       showError("⚠️ " + (data.error || "Domain does not exist!"));
-      showLoading(false);
       return;
     }
 
@@ -100,58 +94,51 @@ async function analyzeSingle() {
     renderSingleCharts(data);
     document.getElementById("resultsSection").classList.add("visible");
   } catch (e) {
-    showError("Backend Error");
+    showError("❌ Backend Connection Error. Make sure app.py is running.");
+  } finally {
+    showLoading(false);
   }
-  showLoading(false);
 }
 
-// --- COMPARE WEBSITES ---
 // --- COMPARE WEBSITES ---
 async function compareURLs() {
   const v1 = document.getElementById("comp1").value.trim();
   const v2 = document.getElementById("comp2").value.trim();
 
-  // Basic Validation
+  // Validation
   if (!v1 || !v2) {
     alert("Please enter both URLs to compare!");
     return;
   }
 
-  const url1 = "https://" + v1;
-  const url2 = "https://" + v2;
+  if (!v1.startsWith("http") || !v2.startsWith("http")) {
+    showError("⚠️ Both URLs must start with http:// or https://");
+    return;
+  }
 
-  // 20 second window for comparison
-  showLoading(true, 20);
+  showLoading(true, 20); // 20s for two captures
   document.getElementById("protocolChart2").style.display = "block";
 
   try {
     const response = await fetch("http://localhost:5000/api/compare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url1, url2 }),
+      body: JSON.stringify({ url1: v1, url2: v2 }),
     });
 
     const data = await response.json();
 
-    // --- CASE 1: Domain Error (400) ---
     if (!response.ok) {
-      // Direct Alert, No showError fuzool calls
       showError("⚠️ " + (data.error || "One of the domains does not exist!"));
-      showLoading(false);
-      return; 
+      return;
     }
 
-    // --- CASE 2: Success ---
     displayComparison(data);
     renderComparisonCharts(data);
     document.getElementById("resultsSection").classList.add("visible");
-
   } catch (e) {
-    // --- CASE 3: Backend connection error ---
-    console.error("Compare Error:", e);
     showError("❌ Error: Cannot connect to backend server!");
   } finally {
-    // End mein loading band
     showLoading(false);
   }
 }
@@ -184,29 +171,19 @@ function displayComparison(data) {
   const s2 = data.site2;
   const statRow = document.getElementById("statRow");
 
-  // Yahan hum grid ko 2 rows mein divide kar rahe hain taake dono ki details aayein
   statRow.innerHTML = `
-        <!-- Site A Details -->
         <div class="stat-card stat-card--cyan">
             <div class="stat-label">Site A: Packets / Data</div>
             <div class="stat-value stat-value--small">${s1.total_packets} / ${formatBytes(s1.total_bytes)}</div>
-            <div class="stat-label" style="margin-top:5px">Avg: ${s1.mean_packet_size} B</div>
         </div>
-        
-        <!-- Site B Details -->
         <div class="stat-card stat-card--purple">
             <div class="stat-label">Site B: Packets / Data</div>
             <div class="stat-value stat-value--small">${s2.total_packets} / ${formatBytes(s2.total_bytes)}</div>
-            <div class="stat-label" style="margin-top:5px">Avg: ${s2.mean_packet_size} B</div>
         </div>
-
-        <!-- Site A Behavior -->
         <div class="stat-card stat-card--cyan">
             <div class="stat-label">Site A Behavior</div>
             <div class="stat-value stat-value--small">${s1.behavior_label}</div>
         </div>
-
-        <!-- Site B Behavior -->
         <div class="stat-card stat-card--purple">
             <div class="stat-label">Site B Behavior</div>
             <div class="stat-value stat-value--small">${s2.behavior_label}</div>
@@ -228,7 +205,6 @@ function renderSingleCharts(fp) {
   const ctxHist = document.getElementById("histogramChart").getContext("2d");
   const ctxLine = document.getElementById("timelineChart").getContext("2d");
 
-  // 1. Protocol Distribution (Doughnut Chart)
   charts.p1 = new Chart(ctx1, {
     type: "doughnut",
     data: {
@@ -243,7 +219,6 @@ function renderSingleCharts(fp) {
     options: { responsive: true, maintainAspectRatio: false },
   });
 
-  // 2. Packet Size Histogram (Bar Chart)
   charts.hist = new Chart(ctxHist, {
     type: "bar",
     data: {
@@ -258,16 +233,13 @@ function renderSingleCharts(fp) {
     },
   });
 
-  // 3. Traffic Timeline (Line Chart)
   charts.line = new Chart(ctxLine, {
     type: "line",
     data: {
-      // 0 se 9 seconds tak ke labels fix kar diye hain stretch ke liye[cite: 1]
       labels: ["0s", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s"],
       datasets: [
         {
           label: "Bytes/sec",
-          // Har second ke liye data check karein, agar missing ho toh 0 dikhayein[cite: 1]
           data: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((s) => {
             const point = fp.timeline.find((t) => t.second === s);
             return point ? point.bytes : 0;
@@ -277,25 +249,10 @@ function renderSingleCharts(fp) {
           fill: true,
           tension: 0.4,
           borderWidth: 3,
-          pointRadius: 4,
         },
       ],
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false }, ticks: { color: "#8b9ab8" } },
-        y: {
-          beginAtZero: true,
-          grid: { color: "rgba(255, 255, 255, 0.05)" },
-          ticks: { color: "#8b9ab8" },
-        },
-      },
-      plugins: {
-        legend: { display: true, labels: { color: "#fff" } },
-      },
-    },
+    options: { responsive: true, maintainAspectRatio: false },
   });
 }
 
@@ -305,7 +262,6 @@ function renderComparisonCharts(data) {
   const s2 = data.site2;
   const opt = { responsive: true, maintainAspectRatio: false };
 
-  // 1. Protocol Pie Site A
   charts.p1 = new Chart(document.getElementById("protocolChart1"), {
     type: "doughnut",
     data: {
@@ -323,7 +279,6 @@ function renderComparisonCharts(data) {
     },
   });
 
-  // 2. Protocol Pie Site B
   charts.p2 = new Chart(document.getElementById("protocolChart2"), {
     type: "doughnut",
     data: {
@@ -341,7 +296,6 @@ function renderComparisonCharts(data) {
     },
   });
 
-  // 3. Histogram (Missing in your code)
   charts.hist = new Chart(document.getElementById("histogramChart"), {
     type: "bar",
     data: {
@@ -362,25 +316,36 @@ function renderComparisonCharts(data) {
     options: opt,
   });
 
-  // 4. Timeline (Missing in your code)
-  const labels = Array.from(
-    { length: Math.max(s1.timeline.length, s2.timeline.length) },
-    (_, i) => `${i}s`,
-  );
+  const timelineLabels = [
+    "0s",
+    "1s",
+    "2s",
+    "3s",
+    "4s",
+    "5s",
+    "6s",
+    "7s",
+    "8s",
+    "9s",
+  ];
   charts.line = new Chart(document.getElementById("timelineChart"), {
     type: "line",
     data: {
-      labels: labels,
+      labels: timelineLabels,
       datasets: [
         {
           label: "Site A",
-          data: labels.map((_, i) => s1.timeline[i]?.bytes || 0),
+          data: timelineLabels.map(
+            (_, i) => s1.timeline.find((t) => t.second === i)?.bytes || 0,
+          ),
           borderColor: "#00f5ff",
           tension: 0.3,
         },
         {
           label: "Site B",
-          data: labels.map((_, i) => s2.timeline[i]?.bytes || 0),
+          data: timelineLabels.map(
+            (_, i) => s2.timeline.find((t) => t.second === i)?.bytes || 0,
+          ),
           borderColor: "#bf5fff",
           tension: 0.3,
         },
@@ -393,8 +358,7 @@ function renderComparisonCharts(data) {
 // --- NAVIGATION ---
 function selectMode(mode) {
   document.getElementById("homeView").style.display = "none";
-  const inputSec = document.getElementById("inputSection");
-  inputSec.classList.add("visible");
+  document.getElementById("inputSection").classList.add("visible");
 
   if (mode === "single") {
     document.getElementById("singleInputGroup").style.display = "flex";
@@ -411,13 +375,11 @@ function selectMode(mode) {
 function goHome() {
   location.reload();
 }
-
 function resetApp() {
   location.reload();
 }
 
-// Input validation to enable buttons
-document.addEventListener("input", (e) => {
+document.addEventListener("input", () => {
   const sBtn = document.getElementById("singleRunBtn");
   const cBtn = document.getElementById("compareRunBtn");
   sBtn.disabled = !document.getElementById("url1").value.trim();
