@@ -5,17 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NetScan · Network Fingerprint Analyzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <!-- Background layers -->
+  <div class="bg-void"></div>
   <div class="bg-grid"></div>
   <div class="bg-scan"></div>
   <div class="bg-glow-c"></div>
   <div class="bg-glow-p"></div>
+  <div class="bg-noise"></div>
 
   <div class="app">
 
@@ -26,16 +28,16 @@
           <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="20" cy="20" r="18" stroke="url(#lg)" stroke-width="1.5"/>
             <circle cx="20" cy="20" r="4" fill="url(#lg)"/>
-            <path d="M20 2 A18 18 0 0 1 38 20" stroke="#00f5ff" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M20 38 A18 18 0 0 1 2 20" stroke="#bf5fff" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="20" y1="2" x2="20" y2="8" stroke="#00f5ff" stroke-width="1.5"/>
-            <line x1="20" y1="32" x2="20" y2="38" stroke="#bf5fff" stroke-width="1.5"/>
-            <line x1="2" y1="20" x2="8" y2="20" stroke="#00f5ff" stroke-width="1.5"/>
-            <line x1="32" y1="20" x2="38" y2="20" stroke="#bf5fff" stroke-width="1.5"/>
+            <path d="M20 2 A18 18 0 0 1 38 20" stroke="#35e7ff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M20 38 A18 18 0 0 1 2 20" stroke="#c26bff" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="20" y1="2" x2="20" y2="8" stroke="#35e7ff" stroke-width="1.5"/>
+            <line x1="20" y1="32" x2="20" y2="38" stroke="#c26bff" stroke-width="1.5"/>
+            <line x1="2" y1="20" x2="8" y2="20" stroke="#35e7ff" stroke-width="1.5"/>
+            <line x1="32" y1="20" x2="38" y2="20" stroke="#c26bff" stroke-width="1.5"/>
             <defs>
               <linearGradient id="lg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#00f5ff"/>
-                <stop offset="1" stop-color="#bf5fff"/>
+                <stop stop-color="#35e7ff"/>
+                <stop offset="1" stop-color="#c26bff"/>
               </linearGradient>
             </defs>
           </svg>
@@ -46,56 +48,87 @@
         </div>
       </div>
       <div class="header-right">
-        <span class="badge-live"><span class="badge-dot"></span>LIVE</span>
+        <div class="status-strip">
+          <span class="status-chip status-chip--node">
+            <span class="status-key">node</span>
+            <span class="status-val">local::5000</span>
+          </span>
+          <span class="status-divider"></span>
+          <span class="badge-live"><span class="badge-dot"></span>live capture</span>
+        </div>
         <span class="badge-ver">v1.0</span>
       </div>
     </header>
 
     <!-- ═══════════════ HOME VIEW ═══════════════ -->
     <section class="home-view" id="homeView">
-      <div class="hero-label">SELECT ANALYSIS MODE</div>
+
+      <div class="radar-backdrop" aria-hidden="true">
+        <svg viewBox="0 0 600 600" class="radar-backdrop-svg">
+          <circle cx="300" cy="300" r="120" class="rb-ring"/>
+          <circle cx="300" cy="300" r="220" class="rb-ring"/>
+          <circle cx="300" cy="300" r="300" class="rb-ring"/>
+          <line x1="300" y1="0" x2="300" y2="600" class="rb-cross"/>
+          <line x1="0" y1="300" x2="600" y2="300" class="rb-cross"/>
+          <path d="M300 300 L300 20 A280 280 0 0 1 520 165 Z" class="rb-sweep"/>
+        </svg>
+      </div>
+
+      <div class="console-line">
+        <span class="console-prompt">netscan@local</span><span class="console-sep">:~$</span>
+        <span class="console-cmd">choose mode --interactive</span><span class="console-cursor"></span>
+      </div>
+
       <div class="mode-cards">
 
         <div class="mode-card mode-card--cyan" id="cardSingle" onclick="selectMode('single')">
-          <div class="card-corner card-corner--tl"></div>
-          <div class="card-corner card-corner--br"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 48 48" fill="none">
-              <circle cx="24" cy="24" r="10" stroke="#00f5ff" stroke-width="1.5"/>
-              <circle cx="24" cy="24" r="18" stroke="#00f5ff" stroke-width="0.75" stroke-dasharray="4 3" opacity="0.5"/>
-              <circle cx="24" cy="24" r="3" fill="#00f5ff"/>
-              <line x1="24" y1="6" x2="24" y2="14" stroke="#00f5ff" stroke-width="1.5"/>
-              <line x1="42" y1="24" x2="34" y2="24" stroke="#00f5ff" stroke-width="1.5"/>
-            </svg>
+          <div class="card-glass-inner">
+            <div class="card-corner card-corner--tl"></div>
+            <div class="card-corner card-corner--br"></div>
+            <div class="card-top">
+              <div class="card-icon">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <circle cx="24" cy="24" r="10" stroke="#35e7ff" stroke-width="1.5"/>
+                  <circle cx="24" cy="24" r="18" stroke="#35e7ff" stroke-width="0.75" stroke-dasharray="4 3" opacity="0.5"/>
+                  <circle cx="24" cy="24" r="3" fill="#35e7ff"/>
+                  <line x1="24" y1="6" x2="24" y2="14" stroke="#35e7ff" stroke-width="1.5"/>
+                  <line x1="42" y1="24" x2="34" y2="24" stroke="#35e7ff" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <span class="card-index">01</span>
+            </div>
+            <h2 class="card-title">Single Site Analysis</h2>
+            <p class="card-desc">Deep-dive traffic fingerprinting for one URL. Capture live packets, classify behavior, and visualize network patterns.</p>
+            <div class="card-cta">
+              <span>Start Analysis</span>
+              <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
           </div>
-          <h2 class="card-title">Single Site<br/>Analysis</h2>
-          <p class="card-desc">Deep-dive traffic fingerprinting for one URL. Capture live packets, classify behavior, and visualize network patterns.</p>
-          <div class="card-cta">
-            <span>Start Analysis</span>
-            <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="card-accent-line"></div>
         </div>
 
         <div class="mode-card mode-card--purple" id="cardCompare" onclick="selectMode('compare')">
-          <div class="card-corner card-corner--tl"></div>
-          <div class="card-corner card-corner--br"></div>
-          <div class="card-icon">
-            <svg viewBox="0 0 48 48" fill="none">
-              <circle cx="14" cy="24" r="8" stroke="#bf5fff" stroke-width="1.5"/>
-              <circle cx="34" cy="24" r="8" stroke="#bf5fff" stroke-width="1.5"/>
-              <line x1="22" y1="24" x2="26" y2="24" stroke="#bf5fff" stroke-width="1.5" stroke-dasharray="2 2"/>
-              <circle cx="14" cy="24" r="2" fill="#bf5fff"/>
-              <circle cx="34" cy="24" r="2" fill="#bf5fff"/>
-            </svg>
+          <div class="card-glass-inner">
+            <div class="card-corner card-corner--tl"></div>
+            <div class="card-corner card-corner--br"></div>
+            <div class="card-top">
+              <div class="card-icon">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <circle cx="14" cy="24" r="8" stroke="#c26bff" stroke-width="1.5"/>
+                  <circle cx="34" cy="24" r="8" stroke="#c26bff" stroke-width="1.5"/>
+                  <line x1="22" y1="24" x2="26" y2="24" stroke="#c26bff" stroke-width="1.5" stroke-dasharray="2 2"/>
+                  <circle cx="14" cy="24" r="2" fill="#c26bff"/>
+                  <circle cx="34" cy="24" r="2" fill="#c26bff"/>
+                </svg>
+              </div>
+              <span class="card-index">02</span>
+            </div>
+            <h2 class="card-title">Compare Websites</h2>
+            <p class="card-desc">Side-by-side fingerprint comparison for two URLs. Diff protocols, packet sizes, and traffic timelines in real time.</p>
+            <div class="card-cta">
+              <span>Compare Now</span>
+              <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
           </div>
-          <h2 class="card-title">Compare<br/>Websites</h2>
-          <p class="card-desc">Side-by-side fingerprint comparison for two URLs. Diff protocols, packet sizes, and traffic timelines in real time.</p>
-          <div class="card-cta">
-            <span>Compare Now</span>
-            <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="card-accent-line"></div>
         </div>
 
       </div>
@@ -114,6 +147,7 @@
       <!-- Single Mode -->
       <div class="input-group" id="singleInputGroup">
         <div class="url-field url-field--cyan">
+          <span class="url-caret">&gt;</span>
           <input type="text" id="url1" class="url-input" placeholder="example.com" autocomplete="off" />
         </div>
         <button class="run-btn run-btn--cyan" id="singleRunBtn" onclick="analyzeSingle()" disabled>
@@ -151,39 +185,41 @@
             <circle class="ring ring-2" cx="100" cy="100" r="55" fill="none" stroke="url(#rg)" stroke-width="0.75"/>
             <circle class="ring ring-3" cx="100" cy="100" r="80" fill="none" stroke="url(#rg)" stroke-width="0.5"/>
             <!-- Satellite nodes -->
-            <circle class="sat sat-1" cx="100" cy="20" r="4" fill="#00f5ff"/>
-            <circle class="sat sat-2" cx="173" cy="62" r="4" fill="#bf5fff"/>
-            <circle class="sat sat-3" cx="173" cy="138" r="4" fill="#00f5ff"/>
-            <circle class="sat sat-4" cx="100" cy="180" r="4" fill="#bf5fff"/>
-            <circle class="sat sat-5" cx="27" cy="138" r="4" fill="#00f5ff"/>
-            <circle class="sat sat-6" cx="27" cy="62" r="4" fill="#bf5fff"/>
+            <circle class="sat sat-1" cx="100" cy="20" r="4" fill="#35e7ff"/>
+            <circle class="sat sat-2" cx="173" cy="62" r="4" fill="#c26bff"/>
+            <circle class="sat sat-3" cx="173" cy="138" r="4" fill="#35e7ff"/>
+            <circle class="sat sat-4" cx="100" cy="180" r="4" fill="#c26bff"/>
+            <circle class="sat sat-5" cx="27" cy="138" r="4" fill="#35e7ff"/>
+            <circle class="sat sat-6" cx="27" cy="62" r="4" fill="#c26bff"/>
             <!-- Connector lines -->
-            <line class="conn" x1="100" y1="100" x2="100" y2="20" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
-            <line class="conn" x1="100" y1="100" x2="173" y2="62" stroke="#bf5fff" stroke-width="0.5" opacity="0.4"/>
-            <line class="conn" x1="100" y1="100" x2="173" y2="138" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
-            <line class="conn" x1="100" y1="100" x2="100" y2="180" stroke="#bf5fff" stroke-width="0.5" opacity="0.4"/>
-            <line class="conn" x1="100" y1="100" x2="27" y2="138" stroke="#00f5ff" stroke-width="0.5" opacity="0.4"/>
-            <line class="conn" x1="100" y1="100" x2="27" y2="62" stroke="#bf5fff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="100" y2="20" stroke="#35e7ff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="173" y2="62" stroke="#c26bff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="173" y2="138" stroke="#35e7ff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="100" y2="180" stroke="#c26bff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="27" y2="138" stroke="#35e7ff" stroke-width="0.5" opacity="0.4"/>
+            <line class="conn" x1="100" y1="100" x2="27" y2="62" stroke="#c26bff" stroke-width="0.5" opacity="0.4"/>
             <!-- Core node -->
             <circle class="core-node" cx="100" cy="100" r="10" fill="url(#cg)"/>
             <circle cx="100" cy="100" r="4" fill="white" opacity="0.9"/>
             <defs>
               <radialGradient id="rg" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#00f5ff" stop-opacity="0.6"/>
-                <stop offset="100%" stop-color="#bf5fff" stop-opacity="0.1"/>
+                <stop offset="0%" stop-color="#35e7ff" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#c26bff" stop-opacity="0.1"/>
               </radialGradient>
               <radialGradient id="cg" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#00f5ff"/>
-                <stop offset="100%" stop-color="#bf5fff"/>
+                <stop offset="0%" stop-color="#35e7ff"/>
+                <stop offset="100%" stop-color="#c26bff"/>
               </radialGradient>
             </defs>
           </svg>
         </div>
         <div class="loading-text">
+          <span class="loading-tag">LOG</span>
           <span id="loadingCaption">Capturing Live Packets (10s window)</span><span class="ellipsis">...</span>
         </div>
         <div class="progress-track">
           <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-ticks" aria-hidden="true"></div>
         </div>
         <div class="progress-pct" id="progressPct">0%</div>
       </div>
@@ -193,7 +229,10 @@
     <section class="results-section" id="resultsSection">
 
       <div class="results-header">
-        <div class="results-title">Analysis Complete</div>
+        <div class="results-title-wrap">
+          <span class="results-eyebrow">scan_complete //</span>
+          <div class="results-title">Analysis Complete</div>
+        </div>
         <button class="new-btn" onclick="resetApp()">New Analysis</button>
       </div>
 
@@ -204,7 +243,7 @@
       <div class="chart-row">
         <div class="chart-card" id="doughnutCard">
           <div class="chart-card-header">
-            <span class="chart-card-title">Protocol Breakdown</span>
+            <span class="chart-card-title"><span class="chart-dot"></span>Protocol Breakdown</span>
           </div>
           <div class="doughnut-wrap" id="doughnutWrap">
             <canvas id="protocolChart1" class="doughnut-canvas"></canvas>
@@ -213,7 +252,7 @@
         </div>
         <div class="chart-card" id="histCard">
           <div class="chart-card-header">
-            <span class="chart-card-title">Packet Size Histogram</span>
+            <span class="chart-card-title"><span class="chart-dot"></span>Packet Size Histogram</span>
           </div>
           <div class="bar-wrap">
             <canvas id="histogramChart"></canvas>
@@ -225,7 +264,7 @@
       <div class="timeline-card-wrap">
         <div class="chart-card chart-card--full">
           <div class="chart-card-header">
-            <span class="chart-card-title">Traffic Timeline</span>
+            <span class="chart-card-title"><span class="chart-dot"></span>Traffic Timeline</span>
             <span class="chart-card-sub">bytes / sec · 10s capture window</span>
           </div>
           <div class="line-wrap">
@@ -237,7 +276,8 @@
     </section>
     <div id="errorModal" class="error-modal">
       <div class="error-content">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="#bf5fff" stroke-width="2">
+        <div class="error-tag">ERR</div>
+        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="8" x2="12" y2="12"></line>
           <line x1="12" y1="16" x2="12.01" y2="16"></line>
