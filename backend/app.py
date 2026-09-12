@@ -24,12 +24,13 @@ def analyze():
     data = request.get_json()
     url = data.get("url", "").strip()
 
+    # URL auto-fix logic
     if not url.startswith(("http://", "https://")):
-        return jsonify({"Error": "Must start with URL http:// or https://"}), 400
+        url = "https://" + url
 
     try:
         # Packets capture karo (10 seconds)
-        packets, target_ip = capture_with_request(url, duration=10)
+        packets, target_ip = capture_with_request(url, duration=10)  # noqa: RUF059
 
         # Features nikalo
         features = extract_features(packets)
@@ -43,7 +44,7 @@ def analyze():
         # Yeh wala block specifically domain missing ke liye chalega
         return jsonify({"error": str(e)}), 400
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return jsonify({"error": str(e)}), 500
 
 
@@ -55,6 +56,12 @@ def compare():
 
     if not url1 or not url2:
         return jsonify({"error": "Dono URLs lazmi hain"}), 400
+
+    # URLs auto-fix logic
+    if not url1.startswith(("http://", "https://")):
+        url1 = "https://" + url1
+    if not url2.startswith(("http://", "https://")):
+        url2 = "https://" + url2
 
     try:
         # --- Site 1 Capture ---
@@ -81,7 +88,7 @@ def compare():
         # Agar koi bhi domain ghalat hai toh tameez se error bhejega
         return jsonify({"error": str(e)}), 400
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # Agar koi aur masla hai
         return jsonify({"error": f"Comparison failed: {str(e)}"}), 500
 

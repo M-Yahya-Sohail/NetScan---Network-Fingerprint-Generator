@@ -15,9 +15,13 @@ function formatBytes(b) {
 }
 
 // --- UI CONTROL ---
-function showLoading(show, duration = 10) {
+let progressInterval;
+
+function showLoading(show, captionText = "Capturing Live Packets...") {
   const loader = document.getElementById("loadingSection");
   const caption = document.getElementById("loadingCaption");
+  const fill = document.getElementById("progressFill");
+  const pctText = document.getElementById("progressPct");
 
   if (show) {
     loader.classList.add("visible");
@@ -25,30 +29,30 @@ function showLoading(show, duration = 10) {
     document.getElementById("homeView").style.display = "none";
     document.getElementById("inputSection").style.display = "none";
 
-    caption.innerText = `Capturing Live Packets (${duration}s window)`;
-    animateProgressBar(duration * 1000);
+    caption.innerText = captionText;
+    fill.style.width = "0%";
+    pctText.innerText = "0%";
+
+    let progress = 0;
+    // Smart progress: slows down as it gets closer to 90%
+    progressInterval = setInterval(() => {
+      let increment = progress < 60 ? 2 : (progress < 90 ? 0.5 : 0.1);
+      if (progress < 95) {
+        progress += increment;
+        fill.style.width = progress + "%";
+        pctText.innerText = Math.floor(progress) + "%";
+      }
+    }, 200);
   } else {
+    clearInterval(progressInterval);
     loader.classList.remove("visible");
   }
 }
 
-function animateProgressBar(ms) {
-  const fill = document.getElementById("progressFill");
-  const pctText = document.getElementById("progressPct");
-  const start = performance.now();
-
-  function update(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / ms, 1);
-
-    fill.style.width = progress * 100 + "%";
-    pctText.innerText = Math.round(progress * 100) + "%";
-
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    }
-  }
-  requestAnimationFrame(update);
+function finishLoading() {
+  clearInterval(progressInterval);
+  document.getElementById("progressFill").style.width = "100%";
+  document.getElementById("progressPct").innerText = "100%";
 }
 
 function showError(msg) {
@@ -65,15 +69,15 @@ function closeError() {
 // --- ANALYZE SINGLE SITE ---
 async function analyzeSingle() {
   const urlInput = document.getElementById("url1");
-  const url = urlInput.value.trim();
+  let url = urlInput.value.trim();
 
-  // STRICTOR VALIDATION: Must have protocol
+  if (!url) return;
+
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    showError("⚠️ Please provide a full URL starting with http:// or https://");
-    return;
+    url = "https://" + url;
   }
 
-  showLoading(true);
+  showLoading(true, "Capturing Live Packets (Single Site)...");
   document.getElementById("protocolChart2").style.display = "none";
 
   try {
@@ -90,33 +94,40 @@ async function analyzeSingle() {
       return;
     }
 
-    displayFingerprint(data);
-    renderSingleCharts(data);
-    document.getElementById("resultsSection").classList.add("visible");
+    // Backend se data aa gaya, ab bar ko 100% karo
+    finishLoading();
+    
+    // Thora sa delay taake user 100% dekh sake, phir results show karo
+    setTimeout(() => {
+      showLoading(false);
+      displayFingerprint(data);
+      renderSingleCharts(data);
+      document.getElementById("resultsSection").classList.add("visible");
+    }, 500);
+
   } catch (e) {
     showError("❌ Backend Connection Error. Make sure app.py is running.");
-  } finally {
-    showLoading(false);
   }
 }
 
 // --- COMPARE WEBSITES ---
 async function compareURLs() {
-  const v1 = document.getElementById("comp1").value.trim();
-  const v2 = document.getElementById("comp2").value.trim();
+  let v1 = document.getElementById("comp1").value.trim();
+  let v2 = document.getElementById("comp2").value.trim();
 
-  // Validation
   if (!v1 || !v2) {
     alert("Please enter both URLs to compare!");
     return;
   }
 
-  if (!v1.startsWith("http") || !v2.startsWith("http")) {
-    showError("⚠️ Both URLs must start with http:// or https://");
-    return;
+  if (!v1.startsWith("http://") && !v1.startsWith("https://")) {
+    v1 = "https://" + v1;
+  }
+  if (!v2.startsWith("http://") && !v2.startsWith("https://")) {
+    v2 = "https://" + v2;
   }
 
-  showLoading(true, 20); // 20s for two captures
+  showLoading(true, "Comparing Live Packets (This may take a bit longer)..."); 
   document.getElementById("protocolChart2").style.display = "block";
 
   try {
@@ -133,13 +144,17 @@ async function compareURLs() {
       return;
     }
 
-    displayComparison(data);
-    renderComparisonCharts(data);
-    document.getElementById("resultsSection").classList.add("visible");
+    finishLoading();
+    
+    setTimeout(() => {
+      showLoading(false);
+      displayComparison(data);
+      renderComparisonCharts(data);
+      document.getElementById("resultsSection").classList.add("visible");
+    }, 500);
+
   } catch (e) {
     showError("❌ Error: Cannot connect to backend server!");
-  } finally {
-    showLoading(false);
   }
 }
 
